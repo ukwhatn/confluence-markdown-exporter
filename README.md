@@ -82,6 +82,12 @@ or by URL:
 confluence-markdown-exporter pages-with-descendants <page-url e.g. https://company.atlassian.net/MySpace/My+Page+Title> <output path e.g. ./output_path/>
 ```
 
+Exclude specific pages (and their descendants) by ID using --ignore (comma-separated IDs):
+
+```sh
+cf-export pages-with-descendants 645208921 --ignore 12345,67890
+```
+
 #### 2.3. Export Space
 
 Export all Confluence pages of a single Space:

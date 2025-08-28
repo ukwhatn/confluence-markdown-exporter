@@ -48,14 +48,38 @@ def pages_with_descendants(
             help="Directory to write exported Markdown files to. Overrides config if set."
         ),
     ] = None,
+    ignore: Annotated[
+        str | None,
+        typer.Option(
+            "--ignore",
+            help="Comma-separated page IDs to exclude (ignored pages and their descendants will be skipped).",
+        ),
+    ] = None,
 ) -> None:
     from confluence_markdown_exporter.confluence import Page
+
+    # Parse ignore string into a set of ints
+    ignore_set: set[int] | None = None
+    if ignore:
+        try:
+            ignore_set = {
+                int(pid.strip())
+                for pid in ignore.split(",")
+                if pid.strip() and pid.strip().isdigit()
+            }
+        except ValueError:
+            # Non-integer values are ignored silently; Typer help explains IDs only
+            ignore_set = {
+                int(pid.strip())
+                for pid in ignore.split(",")
+                if pid.strip().isdigit()
+            }
 
     with measure(f"Export pages {', '.join(pages)} with descendants"):
         for page in pages:
             override_output_path_config(output_path)
             _page = Page.from_id(int(page)) if page.isdigit() else Page.from_url(page)
-            _page.export_with_descendants()
+            _page.export_with_descendants(ignore=ignore_set)
 
 
 @app.command(help="Export all Confluence pages of one or more spaces to Markdown.")

@@ -391,8 +391,30 @@ class Page(Document):
         self.export_markdown()
         self.export_attachments()
 
-    def export_with_descendants(self) -> None:
-        export_pages([self.id, *self.descendants])
+    def export_with_descendants(self, ignore: set[int] | None = None) -> None:
+        # Collect all page IDs to export (self + all descendants)
+        ids: set[int] = {int(self.id)}
+        try:
+            ids.update(int(pid) for pid in self.descendants)
+        except Exception:
+            # If fetching descendants fails, proceed with what we have
+            pass
+
+        # If ignore is provided, remove those IDs and their descendants as well
+        if ignore:
+            for ig in set(ignore):
+                if ig in ids:
+                    ids.discard(ig)
+                try:
+                    # Remove descendants of the ignored page too
+                    ignored_page = Page.from_id(int(ig))
+                    for d in ignored_page.descendants:
+                        ids.discard(int(d))
+                except Exception:
+                    # On any error fetching ignored descendants, skip
+                    continue
+
+        export_pages(sorted(ids))
 
     def export_body(self) -> None:
         soup = BeautifulSoup(self.html, "html.parser")
